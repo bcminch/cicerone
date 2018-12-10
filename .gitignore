@@ -102,3 +102,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Tom's Stuff
+data/
+untappd.cfg
+checkpoints/
+
