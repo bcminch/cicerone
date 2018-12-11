@@ -1,0 +1,6 @@
+jupyterlab
+numpy
+pandas
+matplotlib
+seaborn
+nb_conda_kernels
