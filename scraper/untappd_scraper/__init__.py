@@ -72,12 +72,12 @@ class UnTappdScraper:
                 logo = self.browser.find_element_by_class_name('logo')
                 if not logo or logo.text != 'Untappd':
                     print('didnt find element.  pausing')
-                    time.sleep(3)
+                    time.sleep(4)
                 else:
                     break
             except:
                 print('Exception caught. pausing')
-                time.sleep(2)
+                time.sleep(4)
                 
         ## Try to close bottom banner if it exists
         try:
@@ -99,11 +99,11 @@ class UnTappdScraper:
             try:
                 ## Grab the last one
                 self.browser.find_elements_by_xpath("//*[contains(text(), 'Show More')]")[-1].click()
-                time.sleep(1)
+                time.sleep(3)
 
             except:
                 fail_count += 1
-                time.sleep(2)
+                time.sleep(4)
         
         
 class SearchScraper(UnTappdScraper):
@@ -138,7 +138,7 @@ class BeerScraper(UnTappdScraper):
         beer_descp_tag = 'beer-descrption-read-more'
         try:
             self.browser.find_element_by_class_name(beer_descp_tag).find_element_by_link_text('Show More').click()
-            time.sleep(0.5) ## Pause for read more to load
+            time.sleep(1) ## Pause for read more to load
             
             beer_descp_tag = 'beer-descrption-read-less'
         except:
@@ -188,6 +188,12 @@ class BeerScraper(UnTappdScraper):
                 if len(rating) > 1:
                     rating = rating[0] + '.' + rating[1:]
                 rating = float(rating)
+                
+            rating_dict['serving'] = None
+            try:
+                rating_dict['serving'] = user_review_elem.find_element_by_class_name('serving').find_element_by_tag_name('span').text
+            except:
+                pass
 
             user_reviews.append(rating_dict)
             
@@ -235,3 +241,97 @@ def create_reviews_df(reviews):
     reviews_df['user_id'] = reviews_df['user_id'].str.replace('https://untappd.com/user/', '')
     
     return reviews_df
+
+class UserScraper(UnTappdScraper):
+    def __init__(self, browser):
+        UnTappdScraper.__init__(self, browser)
+        
+        self.classnames = 'name,brewery,style,abv,ibu,rating,raters,date'.split(',')
+        self.url_prefix = 'https://untappd.com/user/'
+        
+    def _get_user_info(self):
+        
+        user_info = self.browser.find_element_by_class_name('user-info')
+
+        user_dict = {}
+        user_dict['name'] = user_info.find_element_by_class_name('info').find_element_by_tag_name('h1').text
+
+        user_dict['username'] = user_info.find_element_by_class_name('username').text
+        user_dict['location'] = user_info.find_element_by_class_name('location').text
+        user_dict['location'] = None if len(user_dict['location']) == 0 else user_dict['location']
+        user_dict['social'] = {}
+        social_list = user_info.find_element_by_class_name('social').find_elements_by_tag_name('a')
+        for social in social_list:
+            user_dict['social'][social.text] = social.get_attribute('href')
+
+        user_dict['stats'] = {}
+        stats_list = user_info.find_element_by_class_name('stats').find_elements_by_tag_name('a')
+        for stat in stats_list:
+            user_dict['stats'][stat.find_element_by_class_name('title').text] = int(stat.find_element_by_class_name('stat').text.replace(',', ''))
+            
+        return user_dict
+        
+    def _get_reviews(self):
+        ## Get reviews
+        user_reviews = []
+
+        user_reviews_elems = self.browser.find_element_by_id('main-stream').find_elements_by_class_name('checkin')
+        for user_review_elem in user_reviews_elems:
+            rating_dict = {}
+            
+            context = user_review_elem.find_element_by_class_name('text')
+            rating_dict['beer_id'] = None
+            
+            for url in context.find_elements_by_tag_name('a'):
+                if url.get_attribute("href").startswith('https://untappd.com/b/'):
+                    rating_dict['beer_id']  =  url.get_attribute("href").split('/')[-1]
+                    
+            rating_dict['user_id'] = user_review_elem.find_element_by_class_name('user').get_attribute('href')
+
+            rating = None
+            try:
+                rating_spans = user_review_elem.find_element_by_class_name('rating-serving').find_elements_by_tag_name('span')
+                for span in rating_spans:
+                    if span.get_attribute('class').startswith('rating small'):
+                        rating = span.get_attribute('class').split(' ')[-1][1:]
+            except:
+                pass
+            
+            rating_dict['rating'] = rating
+
+            rating_dict['comment'] = None
+            try:
+                rating_dict['comment'] = user_review_elem.find_element_by_class_name('comment-text').text
+            except:
+                pass
+            
+            rating_dict['serving'] = None
+            try:
+                rating_dict['serving'] = user_review_elem.find_element_by_class_name('serving').find_element_by_tag_name('span').text
+            except:
+                pass
+
+            if rating:
+                if len(rating) > 1:
+                    rating = rating[0] + '.' + rating[1:]
+                rating = float(rating)
+
+            user_reviews.append(rating_dict)
+            
+        return user_reviews
+        
+    def scrape_user(self, user_id, scrape_reviews = True):
+        url = self.url_prefix + user_id
+        self.load_page(url)
+        
+        user_info = self._get_user_info()
+        
+        if not scrape_reviews:
+            return user_info
+        
+        ## Load all possible reviews
+        self.click_show_more()
+        beer_reviews = self._get_reviews()
+        
+        return user_info, beer_reviews
+        
