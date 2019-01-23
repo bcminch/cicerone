@@ -1,8 +1,8 @@
 name: cicerone
 channels:
   - bcminch
-  - conda-forge
   - defaults
+  - conda-forge
 dependencies:
   - feather-format
   - keras
