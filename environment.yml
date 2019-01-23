@@ -1,0 +1,20 @@
+name: cicerone
+channels:
+  - bcminch
+  - conda-forge
+  - defaults
+dependencies:
+  - feather-format
+  - keras
+  - mars_lab
+  - matplotlib
+  - nb_conda_kernels
+  - nodejs
+  - numpy
+  - pandas
+  - scikit-learn
+  - seaborn
+  - selenium
+  - tensorflow
+  - pip:
+    - textgenrnn

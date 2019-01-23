@@ -13,8 +13,12 @@ Web Scraping, Data Analysis, and Machine Learning on Craft Beer Reviews in Pytho
 
 * Create an environment for this project. 
 
-> conda create --name "cicerone" --file requirements.txt
+> conda env create -f environment.yml
 
-* Launch Jupyter Lab to test out notebook
+* Activate new environment
 
-> jupyter lab
+> conda activate cicerone
+
+* Launch Pre-Built Jupyter Lab to test out notebook
+
+> mars-lab
