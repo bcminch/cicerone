@@ -107,4 +107,5 @@ venv.bak/
 untappd.cfg
 checkpoints/
 
-scraper\untappd_AF.cfg 
+# Brian's Stuff
+untappd_AF.cfg
